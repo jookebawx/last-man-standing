@@ -165,8 +165,6 @@ contract Game {
 
         uint256 newClaimFee = (msg.value * (100 + s_feeIncreasePercentage)) / 100;
         s_claimFee = newClaimFee; // Increase claim fee by the specified percentage
-
-        s_participants.push(payable(msg.sender));
         if (s_currentKing != address(0)) {
             uint256 kingPayout = (msg.value * PAYOUTPERCENTAGE) / 100;
             s_pot += msg.value * (100 - s_platformFeePercentage - PAYOUTPERCENTAGE) / 100;
