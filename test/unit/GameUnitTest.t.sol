@@ -11,12 +11,16 @@ contract GameUnitTest is Test {
     DeployGame deployer = new DeployGame();
     address private USER = makeAddr("user");
 
-
     function setUp() public {
         game = deployer.deployWithConfig();
     }
 
-    function testInitialState(uint256 _gracePeriod, uint256 _initialClaimFee, uint256 _feeIncreasePercentage, uint256 _platformFeePercentage) public {
+    function testInitialState(
+        uint256 _gracePeriod,
+        uint256 _initialClaimFee,
+        uint256 _feeIncreasePercentage,
+        uint256 _platformFeePercentage
+    ) public {
         game = deployer.deploy(_gracePeriod, _initialClaimFee, _feeIncreasePercentage, _platformFeePercentage);
         assertEq(game.getGracePeriod(), _gracePeriod);
         assertEq(game.getInitialClaimFee(), _initialClaimFee);
@@ -36,13 +40,15 @@ contract GameUnitTest is Test {
         uint256 initialBalance = address(DEFAULT_SENDER).balance;
         console2.log(game.getOwner(), DEFAULT_SENDER);
         vm.startPrank(DEFAULT_SENDER);
-        uint256 platformProfitBefore = game.getPlatformProfit(); 
+        uint256 platformProfitBefore = game.getPlatformProfit();
         game.withdrawPlatformFees();
         uint256 platformProfitAfter = game.getPlatformProfit();
         uint256 finalBalance = address(DEFAULT_SENDER).balance;
         vm.stopPrank();
         assertEq(platformProfitAfter, 0, "Platform profit should be zero after withdrawal");
-        assertTrue(finalBalance - initialBalance == platformProfitBefore , "Owner should be able to withdraw platform profits");
+        assertTrue(
+            finalBalance - initialBalance == platformProfitBefore, "Owner should be able to withdraw platform profits"
+        );
     }
 
     function testOnlyOwnerCanWithdrawPlatformFees(address testAddress) public {
@@ -75,16 +81,16 @@ contract GameUnitTest is Test {
         game.UpdateInitialClaimFee(newInitialClaimFee);
     }
 
-    function testupdateCurrentFeeAfterInitialFeeUpdate(uint256 newInitialClaimFee, address testAddress) public{
+    function testupdateCurrentFeeAfterInitialFeeUpdate(uint256 newInitialClaimFee, address testAddress) public {
         //arrange
-        vm.assume (newInitialClaimFee > 0 && newInitialClaimFee < 10 ether && testAddress!=USER);
-        
+        vm.assume(newInitialClaimFee > 0 && newInitialClaimFee < 10 ether && testAddress != USER);
+
         vm.deal(USER, 1 ether); // Give USER 1 ether
-        vm.prank(USER);  // Set USER as the caller
-        game.claimThrone{value: 0.01 ether}();  // USER claims the throne with 0.01 ether
-        vm.deal(testAddress, 1 ether);  // Give testAddress 1 ether
-        vm.prank(testAddress);  // Set testAddress as the caller
-        game.claimThrone{value: 0.011 ether}();  // testAddress claims the throne with 0.02 ether
+        vm.prank(USER); // Set USER as the caller
+        game.claimThrone{value: 0.01 ether}(); // USER claims the throne with 0.01 ether
+        vm.deal(testAddress, 1 ether); // Give testAddress 1 ether
+        vm.prank(testAddress); // Set testAddress as the caller
+        game.claimThrone{value: 0.011 ether}(); // testAddress claims the throne with 0.02 ether
         uint256 claimFeeBeforeUpdate = game.getCurrentClaimFee();
         //act
         vm.startPrank(DEFAULT_SENDER);
@@ -94,15 +100,22 @@ contract GameUnitTest is Test {
         uint256 currentcounter = game.getFeeIncreaseCounter();
         uint256 expectedNewClaimFee = newInitialClaimFee;
         for (uint256 i = 0; i < currentcounter; i++) {
-               expectedNewClaimFee = expectedNewClaimFee * (100 + increasePercentage) / 100; // Reset claim fee to initial value
-            }
+            expectedNewClaimFee = expectedNewClaimFee * (100 + increasePercentage) / 100; // Reset claim fee to initial value
+        }
         //assert
         if (claimFeeBeforeUpdate > expectedNewClaimFee) {
-            assertEq(game.getCurrentClaimFee(), claimFeeBeforeUpdate, "Current claim fee should not change after initial claim fee update");
-        }else{
-            assertEq(game.getCurrentClaimFee(), expectedNewClaimFee, "Current claim fee should be updated after initial claim fee update");
+            assertEq(
+                game.getCurrentClaimFee(),
+                claimFeeBeforeUpdate,
+                "Current claim fee should not change after initial claim fee update"
+            );
+        } else {
+            assertEq(
+                game.getCurrentClaimFee(),
+                expectedNewClaimFee,
+                "Current claim fee should be updated after initial claim fee update"
+            );
         }
-       
     }
     /*//////////////////////////////////////////////////////////////
                              CLAIMANT TEST
@@ -112,10 +125,10 @@ contract GameUnitTest is Test {
         vm.assume(testAddress != USER && testAddress != address(0)); // Ensure testAddress is not USER or zero address
         // Set up initial balance for USER and ensure they can claim the throne
         vm.deal(USER, 1 ether); // Give USER 1 ether
-        vm.prank(USER);  // Set USER as the caller
-        game.claimThrone{value: 0.01 ether}();  // USER claims the throne with 0.01 ether
+        vm.prank(USER); // Set USER as the caller
+        game.claimThrone{value: 0.01 ether}(); // USER claims the throne with 0.01 ether
 
-        uint256 userBalanceBeforePayout = address(USER).balance;  // Record USER's balance before the payout
+        uint256 userBalanceBeforePayout = address(USER).balance; // Record USER's balance before the payout
 
         // Assert that USER is the current King
         assertEq(game.getCurrentKing(), USER, "USER should be the current King");
@@ -124,26 +137,30 @@ contract GameUnitTest is Test {
         assertEq(game.getCurrentClaimFee(), 0.011 ether, "Claim fee should increase by 10% after a claim");
 
         // Simulate another player (testAddress) claiming the throne
-        vm.deal(testAddress, 1 ether);  // Give testAddress 1 ether
-        vm.prank(testAddress);  // Set testAddress as the caller
-        game.claimThrone{value: 0.02 ether}();  // testAddress claims the throne with 0.02 ether
+        vm.deal(testAddress, 1 ether); // Give testAddress 1 ether
+        vm.prank(testAddress); // Set testAddress as the caller
+        game.claimThrone{value: 0.02 ether}(); // testAddress claims the throne with 0.02 ether
 
         // Assert that testAddress is now the current King
         assertEq(game.getCurrentKing(), testAddress, "testAddress should be the current King");
 
-        uint256 userBalanceAfterPayout = address(USER).balance;  // Record USER's balance after the payout
+        uint256 userBalanceAfterPayout = address(USER).balance; // Record USER's balance after the payout
 
         // Assert that USER received the correct payout (10% of 0.02 ether)
-        uint256 expectedPayout = 0.02 ether * 10 / 100;  // Calculate expected payout to dethroned King
-        assertEq(userBalanceAfterPayout - userBalanceBeforePayout, expectedPayout, "USER should receive payout after being dethroned");
+        uint256 expectedPayout = 0.02 ether * 10 / 100; // Calculate expected payout to dethroned King
+        assertEq(
+            userBalanceAfterPayout - userBalanceBeforePayout,
+            expectedPayout,
+            "USER should receive payout after being dethroned"
+        );
 
         // Move time past the grace period
-        vm.warp(block.timestamp + game.getGracePeriod() + 1);  // Advance time past the grace period
+        vm.warp(block.timestamp + game.getGracePeriod() + 1); // Advance time past the grace period
 
         // Try to claim the throne again after the grace period has ended (this should revert)
-        vm.prank(USER);  // Set USER as the caller again
-        vm.expectRevert(Game.Game__GameNotOpen.selector);  // Expect the revert with the custom error selector
-        game.claimThrone{value: 0.03 ether}();  // USER attempts to claim the throne after grace period ends
+        vm.prank(USER); // Set USER as the caller again
+        vm.expectRevert(Game.Game__GameNotOpen.selector); // Expect the revert with the custom error selector
+        game.claimThrone{value: 0.03 ether}(); // USER attempts to claim the throne after grace period ends
 
         // Assert that the current King is still testAddress (as the game is closed)
         assertEq(game.getCurrentKing(), testAddress, "The current King should still be testAddress after grace period");
@@ -153,18 +170,16 @@ contract GameUnitTest is Test {
                                KING TEST
     //////////////////////////////////////////////////////////////*/
 
-
     function testDeclareWinner() public {
         vm.expectRevert(Game.Game__GameisOpen.selector);
         game.declareWinner();
-        
+
         vm.deal(USER, 1 ether);
         vm.prank(USER);
         game.claimThrone{value: 0.01 ether}();
         uint256 winningpot = game.getPot();
         vm.warp(block.timestamp + game.getGracePeriod() + 1); // Move time past the grace period
         game.declareWinner();
-
 
         assertTrue(winningpot > 0, "Winning pot should be greater than zero");
         address winner = game.getCurrentKing();

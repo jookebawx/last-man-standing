@@ -2,19 +2,18 @@
 
 pragma solidity ^0.8.20;
 
-import { Script } from "forge-std/Script.sol";
-import { Game } from "../src/Game.sol";
+import {Script} from "forge-std/Script.sol";
+import {Game} from "../src/Game.sol";
 
-contract DeployGame is Script{ 
-
-    function deploy(uint256 _gracePeriod, uint256 _initialClaimFee, uint256 _feeIncreasePercentage, uint256 _platformFeePercentage) public returns (Game) {
+contract DeployGame is Script {
+    function deploy(
+        uint256 _gracePeriod,
+        uint256 _initialClaimFee,
+        uint256 _feeIncreasePercentage,
+        uint256 _platformFeePercentage
+    ) public returns (Game) {
         vm.startBroadcast();
-        Game game = new Game(
-            _gracePeriod,
-            _initialClaimFee,
-            _feeIncreasePercentage,
-            _platformFeePercentage
-        );   
+        Game game = new Game(_gracePeriod, _initialClaimFee, _feeIncreasePercentage, _platformFeePercentage);
         vm.stopBroadcast();
         return game;
     }
@@ -27,4 +26,4 @@ contract DeployGame is Script{
 
         return deploy(gracePeriod, initialClaimFee, feeIncreasePercentage, platformFeePercentage);
     }
- }
+}
